@@ -6,7 +6,9 @@ Repository with coding projects for the Heat Transfer course at Universidad de l
 
 The repository encompasses three projects:
 
-### **Project 1 - Automated design of a fin:** This project consists of a simulation of the heat profile and efficiency of a heat dissipating fin, which has some given geometric constraints. The program uses a gradient descent method as a means to maximize fin efficiency and then plots the evolution of this optimization process.
+### **Project 1 - Automated design of a fin**
+
+This project consists of a simulation of the heat profile and efficiency of a heat dissipating fin, which has some given geometric constraints. The program uses a gradient descent method as a means to maximize fin efficiency and then plots the evolution of this optimization process.
 
 This project should receive user defined values for the physical parameters, but as of now these are hard-coded (but can be easily changed in code without affecting the model). The [optimization evolution](optimization_evolution.png) file only presents a few initial iterations of optimization, as the program has not been run completely since the recent correction of a series of bugs coming from the original version.
 
