@@ -13,7 +13,7 @@ B0 = 0.3 # thickness of the fin above reference axis
 B1 = 0 # thickness of the fin below reference axis
 
 # Simulation params
-N_max = 2000
+N_max = 20
 save_freq = max(N_max//50,1) # frequency for saving profiles for display
 
 nodes = 100
@@ -66,8 +66,8 @@ def init_coef_matrix(P,Ac,As):
         coefficients[i,i-1] = k*(-Ac[i+1] + 4*Ac[i] + Ac[i-1])
         coefficients[i,i+1] = k*(Ac[i+1] + 4*Ac[i] - Ac[i-1])
         
-    for i in range(2,nodes-2):
-         coefficients[i,i] = -8*Ac[i]*k - 2*h*dx*(-As[i+2] + 8*As[i+1] - 8*As[i-1] + As[i-2])/6
+#    for i in range(2,nodes-2):
+#         coefficients[i,i] = -8*Ac[i]*k - 2*h*dx*(-As[i+2] + 8*As[i+1] - 8*As[i-1] + As[i-2])/6
     
     return coefficients
 
