@@ -13,7 +13,7 @@ B0 = 0.3 # thickness of the fin above reference axis
 B1 = 0 # thickness of the fin below reference axis
 
 # Simulation params
-N_max = 200
+N_max = 20000
 save_freq = max(N_max//50,1) # frequency for saving profiles for display
 
 nodes = 100
@@ -209,6 +209,7 @@ step = delta_t # Conceptually exactly the same. Step may be changed during optim
 gradient = np.zeros(nodes)
 grad_prefactor = 1e-2 # Constant prefactor to change step size. Value determined by trial and error
 grad_step = 10*delta_t # Maximum step size. Replaces prefactor as step size moderator
+grad_step = 50*delta_t
 # grad_step = 4e-1
 
 current_profile = straight_profile 
@@ -269,11 +270,12 @@ print( "Number of iterations: {}. Profiles tested: {}. Efficency values: {}.".fo
 
 end_time = time.time()
 print('Simulation time = ' + str(end_time-start_time) )
+print('Time per step = ' + str( (end_time-start_time)/N_max ) )
 
 # Plotting results
 
 
-plot_profile(current_profile,'last_iteration.png',eta)
+plot_profile(current_profile,'last_iteration.png',eta,False)
 print("Last efficiency: {:.4f}".format(eta))
 print(current_profile)
 
