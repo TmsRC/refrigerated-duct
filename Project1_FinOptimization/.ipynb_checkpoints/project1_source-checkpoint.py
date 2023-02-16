@@ -74,10 +74,7 @@ def init_coef_matrix(t,P,Ac,slopes):
         coefficients[i,i] = -8*Ac[i]*k - 4*h*dx**2 * dAs_dx[i]
         coefficients[i,i-1] = k*(-Ac[i+1] + 4*Ac[i] + Ac[i-1])
         coefficients[i,i+1] = k*(Ac[i+1] + 4*Ac[i] - Ac[i-1])
-        
-#    for i in range(2,nodes-2):
-#         coefficients[i,i] = -8*Ac[i]*k - 2*h*dx*(-As[i+2] + 8*As[i+1] - 8*As[i-1] + As[i-2])/6
-
+    
     return coefficients
 
 
