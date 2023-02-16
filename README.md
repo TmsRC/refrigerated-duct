@@ -23,6 +23,8 @@ The interactive version, as of now, serves as a debugging environment only and i
 2. **Project 2 - Simulation of the heat profile in a mechanical component:** *Awaiting updated version*
 3. **Project 3 - Simulation aided design of a refrigeration system:** *Awaiting updated version*
 
+**Projects 2 and 3 form a cohesive sequence that is disjointed from Project 1. All contents related to these projects will be moved into a separate repository when the projects are updated.**
+
 ## Español
 
 Repositorio con los proyectos para el curso de Transferencia de Calor en la Universidad de los Andes.
