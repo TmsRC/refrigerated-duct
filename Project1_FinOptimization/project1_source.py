@@ -13,7 +13,7 @@ B0 = 0.3 # thickness of the fin above reference axis
 B1 = 0 # thickness of the fin below reference axis
 
 # Simulation params
-N_max = 20000
+N_max = 10000
 save_freq = max(N_max//50,1) # frequency for saving profiles for display
 
 nodes = 100
@@ -113,7 +113,7 @@ def get_profile_efficiency(top_profile,bottom_profile):
     
     thetas_vec = calculate_temperature_profile(t,P,Ac,slopes) # vector of (excess) temperatures along the fin
     
-    return calculate_efficiency(thetas_vec)
+    return calculate_efficiency(thetas_vec), thetas_vec
 
 
 def plot_profile(profile,filename,eta,save=True):
@@ -132,10 +132,65 @@ def plot_profile(profile,filename,eta,save=True):
         plt.savefig(filename)
     return fig
 
+def plot_profile_with_temp(top_profile,bottom_profile,thetas,filename,eta,save=True):
+    fig = plt.figure(figsize=(12,6))
+
+    plt.plot(np.linspace(0,L,nodes),top_profile,color=color2) # Plot top profile
+    plt.plot(np.linspace(0,L,nodes),bottom_profile,color=color2) # Plot bottom profile
+    plt.plot([L,L],[B1,top_profile[-1]],color=color2) # Connect profiles in the edge
+
+    Z2,extent = generate_grid(top_profile,bottom_profile,thetas)
+    im2 = plt.imshow(Z2, cmap='RdYlBu_r', alpha=.9, interpolation='bilinear',
+                 extent=extent, vmin = -theta_B/4, vmax = theta_B)
+
+    plt.colorbar(im2,shrink=0.75)
+    plt.title('$\eta$ = {:.4f}'.format(eta))
+    plt.ylim(B1-0.12,0.42)
+    if save:
+        plt.savefig(filename)
+    return fig
+
+def generate_grid(current_profile,bottom_profile,thetas):
+    
+    dy = dx
+
+    x = np.linspace(0, L*1.1, int(2*1.1*nodes) )
+    y = np.linspace(B1-0.12*w,0.42*w, int(2*1.1*nodes) )
+    
+    thetas_new = np.zeros(len(x))
+    thetas_new[:2*len(thetas):2] = thetas # thetas_new is a finer interpolated version of thetas, for better definition
+    thetas_new[1:2*len(thetas)-2:2] = (thetas[1:]+thetas[:-1])/2 # interpolation step
+
+    top = np.zeros(len(x))
+    top[:2*len(current_profile):2] = current_profile
+    top[1:2*len(current_profile)-2:2] = (current_profile[1:]+current_profile[:-1])/2
+    bottom = np.zeros(len(x))
+    bottom[1:2*len(bottom_profile):2] = bottom_profile
+    bottom[1:2*len(bottom_profile)-2:2] = (bottom_profile[1:]+bottom_profile[:-1])/2
+    
+    extent = np.min(x), np.max(x), np.min(y), np.max(y)
+    X, Y = np.meshgrid(x, y[::-1]) # have to invert y, imshow counts from up to down
+    Z2 = numerical_heatmap(X,Y,top,bottom,thetas_new)
+    
+    return Z2, extent
+
+def numerical_heatmap(x, y, top, bottom, thetas):
+    return (x<=L)*( y<=top )*(y>=bottom)*thetas # temperature value in the domain, zero everywhere else
+
+# def generate_progression_gif(): # Need to check this function. Bad coding practice
+#     with imageio.get_writer('optimization_evolution.gif', mode='I') as writer:
+#         for i in range(0,N_max,save_freq):
+#             img = plot_profile(profiles[i],'',etas[i],save=False)
+#             plt.savefig(str(i),bbox_inches='tight',transparent=False,facecolor='white')
+#             plt.close(img)
+#             image = imageio.imread(str(i)+".png")
+#             writer.append_data(image)
+#             os.remove(str(i)+".png")
+        
 def generate_progression_gif(): # Need to check this function. Bad coding practice
     with imageio.get_writer('optimization_evolution.gif', mode='I') as writer:
         for i in range(0,N_max,save_freq):
-            img = plot_profile(profiles[i],'',etas[i],save=False)
+            img = plot_profile_with_temp(profiles[i],bottom_profile,thetas_list[i],'',etas[i],save=False) # should allow for non-heatmap option
             plt.savefig(str(i),bbox_inches='tight',transparent=False,facecolor='white')
             plt.close(img)
             image = imageio.imread(str(i)+".png")
@@ -155,7 +210,7 @@ x = np.linspace(0,L,nodes)
 m = np.sqrt(h*P[0]/(k*Ac[0]) )
 theoretical_thetas = np.cosh(m*(L-x))/np.cosh(m*L)*theta_B
 
-eta_calc = get_profile_efficiency(straight_profile,bottom_profile)
+eta_calc,_ = get_profile_efficiency(straight_profile,bottom_profile)
 eta_theo = calculate_efficiency(theoretical_thetas)
 
 # plt.figure(figsize=(12,8))
@@ -206,6 +261,7 @@ start_time = time.time()
 
 profiles = [] # Tested profiles
 etas = [] # Efficiencies of each profile tested
+thetas_list = [] # Obtained thetas
 # grad_norm = [] # Norm of the gradient at each iteration
 
 step = delta_t # Conceptually exactly the same. Step may be changed during optimization for stability
@@ -216,9 +272,10 @@ grad_step = 50*delta_t
 # grad_step = 4e-1
 
 current_profile = straight_profile 
-eta = calculate_efficiency(current_profile)
+eta,thetas = get_profile_efficiency(current_profile,bottom_profile)
 etas.append(eta)
 profiles.append(current_profile.copy())
+thetas_list.append(thetas)
 
 
 for iteration in range(N_max):
@@ -228,7 +285,7 @@ for iteration in range(N_max):
     for i in range(1,nodes): # Fixed boundary geometry means first element [0] can be omitted
         test_profile = current_profile.copy()
         test_profile[i] += step
-        eta_i = get_profile_efficiency(test_profile,bottom_profile)
+        eta_i, _ = get_profile_efficiency(test_profile,bottom_profile)
         nabla_i = (eta_i-eta)/step*grad_prefactor
         
 #         if nabla_i >= B0:
@@ -255,14 +312,16 @@ for iteration in range(N_max):
 #     grad_norm.append(np.linalg.norm(gradient)) # keep track of unnormalized step size
     gradient *= min(grad_step/np.linalg.norm(gradient),1) # make it smaller than grad_step
     current_profile += gradient
-    eta = get_profile_efficiency(current_profile,bottom_profile)
+    eta,thetas = get_profile_efficiency(current_profile,bottom_profile)
     
     if eta > etas[iteration]: # If there's improvement, append
         profiles.append(current_profile.copy())
         etas.append(eta)
+        thetas_list.append(thetas)
     else:  # If it made an incorrect step, refine
         profiles.append(profiles[iteration])
         etas.append(etas[iteration])
+        thetas_list.append(thetas_list[iteration])
         step *= 0.5
         grad_step *= 0.5
         print("Halved gradient step. Old step: {:.2e}. New step: {:.2e}".format(2*step,step))
